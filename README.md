@@ -21,20 +21,22 @@
 ```bash
 git clone https://github.com/username/forexbot.git
 cd forexbot
-Creează un mediu virtual (opțional):
-
+2. Creează un mediu virtual (opțional):
+```bash
 python -m venv .venv
 source .venv/bin/activate  # sau .venv\Scripts\activate pe Windows
 
-Instalează dependințele:
+3. Instalează dependințele:
+```bash
 pip install -r requirements.txt
 
-Rulează aplicația:
+4. Rulează aplicația:
+```bash
 python backend/app.py
 
 Aplicația va porni pe http://127.0.0.1:5000
 
-Deschide fișierul index.html din folderul frontend în browser.
+5. Deschide fișierul index.html din folderul frontend în browser.
 
 ⚙️ Configurații
 Cheia Alpha Vantage este setată în fișierul app.py în variabila API_KEY.
