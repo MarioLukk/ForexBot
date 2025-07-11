@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <title>ForexBot</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .suggestions {
+      position: absolute;
+      background: white;
+      border: 1px solid #cbd5e1;
+      max-height: 150px;
+      overflow-y: auto;
+      width: 8rem;
+      z-index: 10;
+    }
+    .suggestions div {
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .suggestions div:hover {
+      background-color: #e0f2fe;
+    }
+    body.dark {
+      background-color: #0f172a;
+      color: #cbd5e1;
+    }
+    body.dark input, body.dark select, body.dark button {
+      background-color: #1e293b;
+      color: #cbd5e1;
+      border-color: #475569;
+    }
+    body.dark .suggestions {
+      background: #1e293b;
+      border-color: #475569;
+      color: #cbd5e1;
+    }
+    body.dark .suggestions div:hover {
+      background-color: #334155;
+    }
+    /* Fix titlu istoric */
+  body.dark #historySection h2 {
+    color: #e0e7ff;
+  }
+
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900">
+
+<div class="flex justify-between items-center mb-6">
+  <button id="darkModeToggle" class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded">
+    Dark Mode
+  </button>
+</div>
+
+  <div class="max-w-5xl mx-auto py-8 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-blue-800 text-center">📈 ForexBot – Analiză Grafic</h1>
+
+    <div class="flex flex-wrap gap-4 items-center mb-6 relative">
+      <div class="relative">
+        <input id="pairInput" class="border rounded p-2 w-32" placeholder="EURUSD" autocomplete="off" />
+        <div id="pairSuggestions" class="suggestions hidden"></div>
+      </div>
+      <select id="intervalSelect" class="border rounded p-2">
+        <option value="daily">Zilnic</option>
+        <option value="weekly">Săptămânal</option>
+        <option value="monthly">Lunar</option>
+      </select>
+      <input id="periodInput" type="number" value="30" min="10" class="border rounded p-2 w-24" />
+      <button onclick="loadChart()" class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-900 transition">🔄 Actualizează analiza</button>
+      <button onclick="toggleHistory()" class="bg-slate-600 text-white px-4 py-2 rounded hover:bg-slate-800 transition">📜 Vezi istoric analize</button>
+    </div>
+
+    <div id="chart" class="mb-10"></div>
+
+    <div id="historySection" class="hidden">
+      <h2 class="text-xl font-semibold mb-2 text-gray-800">📋 Istoric ultimele 50 analize</h2>
+      <table class="table-auto w-full text-sm bg-white rounded shadow overflow-hidden">
+        <thead class="bg-blue-100 text-left">
+          <tr>
+            <th class="px-4 py-2">Pereche</th>
+            <th class="px-4 py-2">Interval</th>
+            <th class="px-4 py-2">Perioadă</th>
+            <th class="px-4 py-2">Dată</th>
+            <th class="px-4 py-2">Close</th>
+          </tr>
+        </thead>
+        <tbody id="historyTable" class="text-slate-700"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const forexPairs = [
+      "EURUSD", "USDJPY", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD",
+      "EURGBP", "EURJPY", "GBPJPY", "AUDJPY", "CHFJPY", "EURAUD", "EURCHF"
+    ];
+
+    const pairInput = document.getElementById("pairInput");
+    const suggestionsBox = document.getElementById("pairSuggestions");
+
+    pairInput.addEventListener("input", () => {
+      const value = pairInput.value.toUpperCase();
+      if (!value) {
+        suggestionsBox.classList.add("hidden");
+        return;
+      }
+
+      const matches = forexPairs.filter(p => p.includes(value));
+      if (matches.length === 0) {
+        suggestionsBox.classList.add("hidden");
+        return;
+      }
+
+      suggestionsBox.innerHTML = matches.map(p => `<div>${p}</div>`).join("");
+      suggestionsBox.classList.remove("hidden");
+    });
+
+    suggestionsBox.addEventListener("click", (e) => {
+      if (e.target.tagName === "DIV") {
+        pairInput.value = e.target.innerText;
+        suggestionsBox.classList.add("hidden");
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!pairInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+        suggestionsBox.classList.add("hidden");
+      }
+    });
+
+    function intervalToRomanian(interval) {
+  switch(interval) {
+    case 'daily': return 'Zilnic';
+    case 'weekly': return 'Săptămânal';
+    case 'monthly': return 'Lunar';
+    default: return interval;
+  }
+}
+
+    function saveSettings() {
+      const settings = {
+        pair: document.getElementById("pairInput").value.toUpperCase(),
+        interval: document.getElementById("intervalSelect").value,
+        period: document.getElementById("periodInput").value,
+        darkMode: document.body.classList.contains("dark")
+      };
+      localStorage.setItem("userSettings", JSON.stringify(settings));
+    }
+
+    function loadSettings() {
+      const settings = JSON.parse(localStorage.getItem("userSettings"));
+      if (settings) {
+        document.getElementById("pairInput").value = settings.pair || "EURUSD";
+        document.getElementById("intervalSelect").value = settings.interval || "daily";
+        document.getElementById("periodInput").value = settings.period || 30;
+        if (settings.darkMode) document.body.classList.add("dark");
+      } else {
+        document.getElementById("pairInput").value = "EURUSD";
+        document.getElementById("intervalSelect").value = "daily";
+        document.getElementById("periodInput").value = 30;
+      }
+    }
+
+    async function loadChart() {
+      saveSettings(); // salvează setările actuale
+
+      const pair = document.getElementById("pairInput").value.toUpperCase();
+      const interval = document.getElementById("intervalSelect").value;
+      const period = document.getElementById("periodInput").value;
+
+      try {
+        const res = await fetch(`http://127.0.0.1:5000/api/signal?pair=${pair}&interval=${interval}&period=${period}`);
+        const data = await res.json();
+
+        const isDark = document.body.classList.contains("dark");
+
+        const tracePrice = {
+          x: data.chart.dates,
+          open: data.chart.open,
+          high: data.chart.high,
+          low: data.chart.low,
+          close: data.chart.close,
+          type: 'candlestick',
+          xaxis: 'x',
+          yaxis: 'y',
+          name: pair
+        };
+
+        const traceRSI = {
+          x: data.chart.dates.slice(-data.chart.rsi.length),
+          y: data.chart.rsi,
+          mode: 'lines',
+          name: 'RSI',
+          line: { color: '#6366F1', width: 2 },
+          xaxis: 'x',
+          yaxis: 'y2'
+        };
+
+        const smaLine = {
+  x: data.chart.dates,
+  y: data.chart.sma,
+  type: 'scatter',
+  mode: 'lines',
+  line: { color: 'green', width: 1.5 },
+  name: 'SMA',
+  xaxis: 'x',
+  yaxis: 'y'
+};
+
+const emaLine = {
+  x: data.chart.dates,
+  y: data.chart.ema,
+  type: 'scatter',
+  mode: 'lines',
+  line: { color: 'orange', width: 1.5 },
+  name: 'EMA',
+  xaxis: 'x',
+  yaxis: 'y'
+};
+
+const traceMACD = {
+  x: data.chart.dates,
+  y: data.chart.macd,
+  type: 'scatter',
+  mode: 'lines',
+  line: { color: 'blue' },
+  name: 'MACD',
+  yaxis: 'y3'
+};
+
+const traceMACDSignal = {
+  x: data.chart.dates,
+  y: data.chart.macd_signal,
+  type: 'scatter',
+  mode: 'lines',
+  line: { color: 'red', dash: 'dot' },
+  name: 'Semnal',
+  yaxis: 'y3'
+};
+
+const traceMACDHist = {
+  x: data.chart.dates,
+  y: data.chart.macd_hist,
+  type: 'bar',
+  marker: { color: 'lightblue' },
+  name: 'Histograma',
+  yaxis: 'y3'
+};
+
+const bbUpper = {
+  x: data.chart.dates,
+  y: data.chart.bb_upper,
+  type: 'scatter',
+  mode: 'lines',
+  name: 'Bandă BB Sus',
+  line: { color: 'green', width: 2.5 },
+  yaxis: 'y'
+};
+
+const bbLower = {
+  x: data.chart.dates,
+  y: data.chart.bb_lower,
+  type: 'scatter',
+  mode: 'lines',
+  name: 'Bandă BB Jos',
+  line: { color: 'red', width: 2.5 },
+  yaxis: 'y'
+};
+
+const bbFill = {
+  x: data.chart.dates.concat([...data.chart.dates].reverse()),
+  y: data.chart.bb_upper.concat([...data.chart.bb_lower].reverse()),
+  fill: 'toself',
+  fillcolor: 'rgba(0, 128, 0, 0.05)',  // verde deschis
+  line: { color: 'transparent' },
+  type: 'scatter',
+  mode: 'lines',
+  name: 'Bollinger Area',
+  yaxis: 'y',
+  hoverinfo: 'skip',
+  showlegend: false
+};
+
+
+
+        const layout = {
+  title: {
+    text: `Grafic ${pair}`,
+    font: { size: 24, color: isDark ? '#93c5fd' : '#1E3A8A' },
+    x: 0.5,
+    xanchor: 'center'
+  },
+  height: 1000,
+  paper_bgcolor: isDark ? '#0f172a' : '#f1f5f9',
+      plot_bgcolor: isDark ? '#1e293b' : '#ffffff',
+  dragmode: 'pan',
+  margin: { t: 50, b: 40, l: 60, r: 20 },
+
+  xaxis: {
+    domain: [0, 1],
+    anchor: 'y',
+    rangeslider: { visible: false },
+    gridcolor: isDark ? '#475569' : '#e2e8f0',
+    tickfont: { color: isDark ? '#cbd5e1' : '#334155' }
+  },
+
+  yaxis: {
+    domain: [0.45, 1],
+    title: 'Preț',
+    gridcolor: isDark ? '#475569' : '#e2e8f0',
+    tickfont: { color: isDark ? '#cbd5e1' : '#334155' }
+  },
+
+  yaxis2: {
+    domain: [0.25, 0.42],
+    title: 'RSI',
+    gridcolor: isDark ? '#475569' : '#e2e8f0',
+    tickfont: { color: isDark ? '#cbd5e1' : '#334155' }
+  },
+
+  yaxis3: {
+    domain: [0, 0.2],
+    title: 'MACD',
+    gridcolor: isDark ? '#475569' : '#e2e8f0',
+    tickfont: { color: isDark ? '#cbd5e1' : '#334155' }
+  },
+
+  shapes: [
+    {
+      type: 'line',
+      xref: 'paper',
+      x0: 0,
+      x1: 1,
+      yref: 'y2',
+      y0: 70,
+      y1: 70,
+      line: { color: 'red', width: 1, dash: 'dot' }
+    },
+    {
+      type: 'line',
+      xref: 'paper',
+      x0: 0,
+      x1: 1,
+      yref: 'y2',
+      y0: 30,
+      y1: 30,
+      line: { color: 'green', width: 1, dash: 'dot' }
+    }
+  ]
+};
+
+
+        const config = {
+          scrollZoom: true,
+          displaylogo: false,
+          modeBarButtonsToRemove: [
+            'zoom2d', 'select2d', 'lasso2d',
+            'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d',
+            'hoverClosestCartesian', 'hoverCompareCartesian',
+            'toggleSpikelines', 'resetViewMapbox'
+          ]
+        };
+
+        Plotly.newPlot("chart", [tracePrice, smaLine, emaLine, traceRSI, traceMACD, traceMACDSignal, traceMACDHist, bbUpper, bbLower, bbFill], layout, config);
+      } catch (err) {
+        console.error("Eroare la fetch:", err);
+        alert("Nu s-a putut încărca graficul. Verifică serverul sau conexiunea.");
+      }
+    }
+
+    async function toggleHistory() {
+      const section = document.getElementById("historySection");
+      section.classList.toggle("hidden");
+
+      if (!section.classList.contains("hidden")) {
+        const res = await fetch("http://127.0.0.1:5000/api/history");
+        const history = await res.json();
+
+        const table = document.getElementById("historyTable");
+        table.innerHTML = "";
+
+        history.forEach(entry => {
+          const row = `<tr>
+              <td class="px-4 py-2">${entry.pair}</td>
+              <td class="px-4 py-2">${intervalToRomanian(entry.interval)}</td>
+              <td class="px-4 py-2">${entry.period}</td>
+              <td class="px-4 py-2">${entry.timestamp}</td>
+              <td class="px-4 py-2">${entry.close.toFixed(4)}</td>
+            </tr>`;
+          table.innerHTML += row;
+        });
+      }
+    }
+
+    window.onload = () => {
+      loadSettings();
+      loadChart();
+    };
+
+    const darkModeToggle = document.getElementById("darkModeToggle");
+
+// Aplică tema din localStorage la încărcare
+function applyDarkMode(enabled) {
+  if (enabled) {
+    document.body.classList.add("dark");
+    darkModeToggle.textContent = "Light Mode";
+  } else {
+    document.body.classList.remove("dark");
+    darkModeToggle.textContent = "Dark Mode";
+  }
+}
+
+darkModeToggle.addEventListener("click", () => {
+  const isDark = document.body.classList.contains("dark");
+  applyDarkMode(!isDark);
+  localStorage.setItem("darkModeEnabled", !isDark);
+  loadChart();
+});
+
+// La încărcare pagină
+window.onload = () => {
+  // Alte inițializări existente (loadSettings, loadChart, etc)
+  loadSettings();
+  loadChart();
+
+  const darkModeEnabled = localStorage.getItem("darkModeEnabled") === "true";
+  applyDarkMode(darkModeEnabled);
+};
+
+  </script>
+</body>
+</html>
