@@ -16,22 +16,18 @@
 
 ## 📦 Instalare & rulare
 
-1. **Clonează proiectul:**
-
-```bash
+1. Clonează proiectul:
 git clone https://github.com/username/forexbot.git
 cd forexbot
-2. Creează un mediu virtual (opțional):
-```bash
+
+3. Creează un mediu virtual (opțional):
 python -m venv .venv
 source .venv/bin/activate  # sau .venv\Scripts\activate pe Windows
 
-3. Instalează dependințele:
-```bash
+4. Instalează dependințele:
 pip install -r requirements.txt
 
 4. Rulează aplicația:
-```bash
 python backend/app.py
 
 Aplicația va porni pe http://127.0.0.1:5000
