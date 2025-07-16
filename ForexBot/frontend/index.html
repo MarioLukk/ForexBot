@@ -73,6 +73,11 @@
     </div>
 
     <div id="chart" class="mb-10"></div>
+<div id="rsiStatus" class="text-lg font-semibold text-center text-indigo-700 my-4"></div>
+<div id="macdStatus" class="text-lg font-semibold text-center my-4 transition-all duration-300"></div>
+    <div id="smaEmaStatus" class="mb-4 text-lg text-center font-semibold"></div>
+<div id="bollingerStatus" class="text-lg text-center font-semibold mb-4"></div>
+<div id="overallSignal" class="text-xl text-center font-bold mt-4"></div>
 
     <div id="historySection" class="hidden">
       <h2 class="text-xl font-semibold mb-2 text-gray-800">📋 Istoric ultimele 50 analize</h2>
@@ -92,6 +97,7 @@
   </div>
 
   <script>
+
     const forexPairs = [
       "EURUSD", "USDJPY", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD",
       "EURGBP", "EURJPY", "GBPJPY", "AUDJPY", "CHFJPY", "EURAUD", "EURCHF"
@@ -173,6 +179,81 @@
       try {
         const res = await fetch(`http://127.0.0.1:5000/api/signal?pair=${pair}&interval=${interval}&period=${period}`);
         const data = await res.json();
+const rsiStatus = document.getElementById("rsiStatus");
+const rsiValue = data.rsi;
+const rsiState = data.rsi_state;
+
+if (rsiValue !== null && rsiValue !== undefined) {
+  let colorClass = "text-yellow-600"; // default: neutru
+  if (rsiValue > 70) {
+    colorClass = "text-red-600"; // supracumpărat
+  } else if (rsiValue < 30) {
+    colorClass = "text-green-600"; // supravândut
+  }
+
+const macdSignalDiv = document.getElementById("macdStatus");
+const macdState = data.macd_state;
+
+macdSignalDiv.innerText = macdState;
+
+if(macdState.toLowerCase().includes("bullish")) {
+  macdSignalDiv.style.color = "green";
+} else if(macdState.toLowerCase().includes("bearish")) {
+  macdSignalDiv.style.color = "red";
+} else {
+  macdSignalDiv.style.color = "gray";
+}
+
+const smaEmaSignalDiv = document.getElementById("smaEmaStatus");
+const smaEmaState = data.sma_ema_state || "";
+
+smaEmaSignalDiv.innerText = smaEmaState;
+
+if (smaEmaState.toLowerCase().includes("bullish")) {
+  smaEmaSignalDiv.style.color = "green";
+} else if (smaEmaState.toLowerCase().includes("bearish")) {
+  smaEmaSignalDiv.style.color = "red";
+} else {
+  smaEmaSignalDiv.style.color = "gray";
+}
+const bollingerSignalDiv = document.getElementById("bollingerStatus");
+const bollingerState = data.bollinger_state;
+
+bollingerSignalDiv.innerText = bollingerState;
+
+if (bollingerState.toLowerCase().includes("cumpărare")) {
+  bollingerSignalDiv.style.color = "green";
+} else if (bollingerState.toLowerCase().includes("vânzare")) {
+  bollingerSignalDiv.style.color = "red";
+} else {
+  bollingerSignalDiv.style.color = "gray";
+}
+
+const overallDiv = document.getElementById("overallSignal");
+overallDiv.innerText = data.overall_signal;
+
+if (data.overall_signal.includes("CUMPĂRARE")) {
+  overallDiv.style.color = "green";
+} else if (data.overall_signal.includes("VÂNZARE")) {
+  overallDiv.style.color = "red";
+} else {
+  overallDiv.style.color = "gray";
+}
+
+  // Dark mode: schimbăm clasa dacă e întuneric
+  const isDark = document.body.classList.contains("dark");
+  if (isDark) {
+    if (rsiValue > 70) colorClass = "text-red-400";
+    else if (rsiValue < 30) colorClass = "text-green-400";
+    else colorClass = "text-yellow-300";
+  }
+
+  rsiStatus.className = `text-lg font-semibold text-center my-4 ${colorClass}`;
+  rsiStatus.innerText = `RSI: ${rsiValue.toFixed(2)} – Stare: ${rsiState}`;
+} else {
+  rsiStatus.innerText = "RSI indisponibil";
+  rsiStatus.className = "text-lg font-semibold text-center my-4 text-gray-500";
+}
 
         const isDark = document.body.classList.contains("dark");
 
@@ -283,8 +364,6 @@ const bbFill = {
   showlegend: false
 };
 
-
-
         const layout = {
   title: {
     text: `Grafic ${pair}`,
@@ -350,7 +429,6 @@ const bbFill = {
     }
   ]
 };
-
 
         const config = {
           scrollZoom: true,
@@ -424,7 +502,6 @@ window.onload = () => {
   // Alte inițializări existente (loadSettings, loadChart, etc)
   loadSettings();
   loadChart();
-
   const darkModeEnabled = localStorage.getItem("darkModeEnabled") === "true";
   applyDarkMode(darkModeEnabled);
 };

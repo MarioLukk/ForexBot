@@ -18,16 +18,20 @@ function getSignal() {
                 return;
             }
 
-            const msg = `Semnal: ${data.signal}\nRSI: ${data.rsi}\nPreț: ${data.latest_price}`;
-            alert(msg);
-            document.getElementById("output").innerText = msg;
+            const chart = data.chart;
+            const rsiSignalText = chart.signal || "N/A";
+            const latestRsi = chart.latest_rsi !== undefined ? chart.latest_rsi.toFixed(2) : "N/A";
+            const latestPrice = chart.latest_price !== undefined ? chart.latest_price.toFixed(4) : "N/A";
+
+            const rsiSignalDiv = document.getElementById("rsi-signal");
+            rsiSignalDiv.innerText = `Semnal RSI: ${rsiSignalText} (RSI: ${latestRsi}, Preț: ${latestPrice})`;
 
             const trace = {
-                x: data.chart.dates,
-                open: data.chart.open,
-                high: data.chart.high,
-                low: data.chart.low,
-                close: data.chart.close,
+                x: chart.dates,
+                open: chart.open,
+                high: chart.high,
+                low: chart.low,
+                close: chart.close,
                 type: 'candlestick',
                 name: pair,
                 increasing: { line: { color: 'green' } },
@@ -37,7 +41,9 @@ function getSignal() {
             const layout = {
                 title: `Grafic ${pair} (${interval})`,
                 xaxis: { title: 'Dată' },
-                yaxis: { title: 'Preț' }
+                yaxis: { title: 'Preț' },
+                plot_bgcolor: '#ffffff',
+                paper_bgcolor: '#ffffff'
             };
 
             Plotly.newPlot('chart', [trace], layout);

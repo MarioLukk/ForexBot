@@ -6,7 +6,6 @@ import json
 from flask_cors import CORS
 
 from indicators import compute_rsi, compute_sma, compute_ema, compute_macd, compute_bollinger_bands
-from strategy import analyze_rsi_signal
 
 app = Flask(__name__)
 CORS(app)
@@ -67,6 +66,16 @@ def save_to_cache(pair, interval, period, data):
     conn.commit()
     conn.close()
 
+def get_rsi_state(rsi_value):
+    if rsi_value is None:
+        return "Indisponibil"
+    if rsi_value > 70:
+        return "Supracumpărat"
+    elif rsi_value < 30:
+        return "Supravândut"
+    else:
+        return "Neutru"
+
 def fetch_forex_data(pair, interval, period, rsi_len=14, sma_len=14, ema_len=14):
     function_map = {
         "daily": "FX_DAILY",
@@ -119,6 +128,8 @@ def fetch_forex_data(pair, interval, period, rsi_len=14, sma_len=14, ema_len=14)
     chart_data["macd"] = macd
     chart_data["macd_signal"] = signal
     chart_data["macd_hist"] = hist
+    macd_alert = analyze_macd_simple(chart_data["macd"], chart_data["macd_signal"])
+    chart_data["macd_signal_text"] = macd_alert
     upper, lower = compute_bollinger_bands(closes)
     chart_data["bb_upper"] = upper
     chart_data["bb_lower"] = lower
@@ -135,6 +146,83 @@ def fetch_forex_data(pair, interval, period, rsi_len=14, sma_len=14, ema_len=14)
 
     return chart_data
 
+def analyze_macd_simple(macd, signal):
+    if not macd or not signal:
+        return "MACD Neutru"
+    last_macd = macd[-1]
+    last_signal = signal[-1]
+    if last_macd > last_signal:
+        return "MACD bullish - Semnal de cumpărare"
+    elif last_macd < last_signal:
+        return "MACD bearish - Semnal de vânzare"
+    else:
+        return "MACD Neutru"
+
+def analyze_sma_ema_simple(sma, ema):
+        if not sma or not ema:
+            return "SMA/EMA Neutru"
+        last_sma = sma[-1]
+        last_ema = ema[-1]
+        if last_ema > last_sma:
+            return "EMA > SMA - Semnal Bullish"
+        elif last_ema < last_sma:
+            return "EMA < SMA - Semnal Bearish"
+        else:
+            return "EMA = SMA - Semnal Neutru"
+
+
+def analyze_bollinger_signal(close, bb_upper, bb_lower):
+    if not close or not bb_upper or not bb_lower:
+        return "Bollinger Neutru"
+
+    last_price = close[-1]
+    last_upper = bb_upper[-1]
+    last_lower = bb_lower[-1]
+
+    if last_price >= last_upper:
+        return "Bollinger - Semnal de vânzare"
+    elif last_price <= last_lower:
+        return "Bollinger - Semnal de cumpărare"
+    else:
+        return "Bollinger Neutru"
+
+def compute_overall_signal(rsi_state, macd_state, sma_ema_state, bollinger_state):
+    score = 0
+
+    # RSI scoring
+    if rsi_state == "Supravândut":
+        score += 1
+    elif rsi_state == "Supracumpărat":
+        score -= 1
+
+    # MACD scoring
+    if "bullish" in macd_state.lower():
+        score += 1
+    elif "bearish" in macd_state.lower():
+        score -= 1
+
+    # SMA/EMA scoring
+    if "bullish" in sma_ema_state.lower():
+        score += 1
+    elif "bearish" in sma_ema_state.lower():
+        score -= 1
+
+    # Bollinger scoring
+    if "cumpărare" in bollinger_state.lower():
+        score += 1
+    elif "vânzare" in bollinger_state.lower():
+        score -= 1
+
+    # Interpretare scor
+    if score >= 2:
+        return "✅ Recomandare: CUMPĂRARE"
+    elif score <= -2:
+        return "❌ Recomandare: VÂNZARE"
+    else:
+        return "⚖️ Recomandare: AȘTEPTARE / HOLD"
+
+
+
 @app.route("/api/signal")
 def get_signal():
     pair = request.args.get("pair")
@@ -149,18 +237,63 @@ def get_signal():
 
     cached = get_cached_data(pair, interval, period)
     if cached:
-        signal = analyze_rsi_signal(cached.get("rsi", []))
-        cached["signal"] = signal
-        return jsonify({"chart": cached})
+        latest_rsi = cached.get("rsi", [])[-1] if cached.get("rsi") else None
+        rsi_state = get_rsi_state(latest_rsi)
+
+        macd_values = cached.get("macd", [])
+        macd_signal_values = cached.get("macd_signal", [])
+        macd_state = analyze_macd_simple(macd_values, macd_signal_values)
+
+        sma = cached.get("sma", [])
+        ema = cached.get("ema", [])
+        sma_ema_state = analyze_sma_ema_simple(sma, ema)
+        bollinger_state = analyze_bollinger_signal(cached.get("close"), cached.get("bb_upper"),
+                                                   cached.get("bb_lower"))
+        overall_signal = compute_overall_signal(
+            rsi_state, macd_state, sma_ema_state, bollinger_state
+        )
+
+        return jsonify({
+            "chart": cached,
+            "rsi": latest_rsi,
+            "rsi_state": rsi_state,
+            "macd_state": macd_state,
+            "sma_ema_state": sma_ema_state,
+            "bollinger_state": bollinger_state,
+            "overall_signal": overall_signal
+        })
 
     chart_data = fetch_forex_data(pair, interval, period, rsi_len, sma_len, ema_len)
     if chart_data:
         save_to_cache(pair, interval, period, chart_data)
-        signal = analyze_rsi_signal(chart_data.get("rsi", []))
-        chart_data["signal"] = signal
-        return jsonify({"chart": chart_data})
+        latest_rsi = chart_data.get("rsi", [])[-1] if chart_data.get("rsi") else None
+        rsi_state = get_rsi_state(latest_rsi)
+
+        macd_values = chart_data.get("macd", [])
+        macd_signal_values = chart_data.get("macd_signal", [])
+        macd_state = analyze_macd_simple(macd_values, macd_signal_values)
+
+        sma = chart_data.get("sma", [])
+        ema = chart_data.get("ema", [])
+        sma_ema_state = analyze_sma_ema_simple(sma, ema)
+        bollinger_state = analyze_bollinger_signal(chart_data.get("close"), chart_data.get("bb_upper"),
+                                                   chart_data.get("bb_lower"))
+        overall_signal = compute_overall_signal(
+            rsi_state, macd_state, sma_ema_state, bollinger_state
+        )
+
+        return jsonify({
+            "chart": chart_data,
+            "rsi": latest_rsi,
+            "rsi_state": rsi_state,
+            "macd_state": macd_state,
+            "sma_ema_state": sma_ema_state,
+            "bollinger_state": bollinger_state,
+            "overall_signal": overall_signal
+        })
     else:
         return jsonify({"error": "Datele nu au fost returnate corect de Alpha Vantage."}), 500
+
 
 @app.route("/api/history")
 def get_history():
