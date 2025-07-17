@@ -42,14 +42,16 @@ Aplicația va porni la adresa: http://127.0.0.1:5000
 
 Deschide manual fișierul frontend/index.html în browser pentru interfața grafică.
 
-⚙️ Configurații
+⚙️ Configurații:
+
 Cheia API Alpha Vantage este setată în fișierul app.py, în variabila API_KEY.
 
 Datele sunt stocate local în fișierul forex.db (SQLite).
 
 Caching-ul este implementat pentru a limita apelurile către API și pentru o performanță mai bună.
 
-🧠 Funcționalități
+🧠 Funcționalități:
+
 Selectare pereche valutară (ex: EURUSD)
 
 Alegere interval temporal: zilnic, săptămânal, lunar
@@ -62,7 +64,8 @@ Istoric cu ultimele 50 de analize
 
 Suport pentru mod Light/Dark
 
-📋 TODO – Funcționalități în dezvoltare
+📋 TODO – Funcționalități în dezvoltare:
+
 Afișare automată semnale de tip BUY / SELL pe baza indicatorilor
 
 Strategie combinată cu scor pe indicatori multipli
