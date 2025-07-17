@@ -1,15 +1,19 @@
 # 📈 ForexBot – Aplicație de analiză Forex cu indicatori tehnici
 
-**ForexBot** este o aplicație web care preia și afișează date Forex din sursa Alpha Vantage, oferind vizualizări grafice și indicatori tehnici precum:
-- RSI (Relative Strength Index)
-- SMA (Simple Moving Average)
-- EMA (Exponential Moving Average)
-- MACD (Moving Average Convergence Divergence)
-- Bollinger Bands
+**ForexBot** este o aplicație web locală care preia și afișează date din piața Forex folosind API-ul Alpha Vantage. Oferă vizualizări grafice de tip candlestick și interpretarea automată a celor mai folosiți indicatori tehnici:
+
+- **RSI** – Relative Strength Index  
+- **SMA** – Simple Moving Average  
+- **EMA** – Exponential Moving Average  
+- **MACD** – Moving Average Convergence Divergence  
+- **Bollinger Bands**
+
+---
 
 ## 🔧 Tehnologii folosite
-- **Backend:** Python (Flask), SQLite
-- **Frontend:** HTML, TailwindCSS, Plotly.js
+
+- **Backend:** Python (`Flask`), `SQLite`
+- **Frontend:** HTML, `TailwindCSS`, `Plotly.js`
 - **API de date:** [Alpha Vantage](https://www.alphavantage.co/)
 
 ---
@@ -17,48 +21,52 @@
 ## 📦 Instalare & rulare
 
 1. Clonează proiectul:
-git clone https://github.com/username/forexbot.git
-cd forexbot
-
-3. Creează un mediu virtual (opțional):
+   git clone https://github.com/username/forexbot.git
+   cd forexbot
+   
+2. Creează un mediu virtual (opțional):
 python -m venv .venv
-source .venv/bin/activate  # sau .venv\Scripts\activate pe Windows
+source .venv/bin/activate
+sau
+.venv\Scripts\activate pe Windows
 
-4. Instalează dependințele:
+3. Instalează dependințele:
+
 pip install -r requirements.txt
 
-4. Rulează aplicația:
+4. Rulează aplicația backend:
+
 python backend/app.py
 
-Aplicația va porni pe http://127.0.0.1:5000
+Aplicația va porni la adresa: http://127.0.0.1:5000
 
-5. Deschide fișierul index.html din folderul frontend în browser.
+Deschide manual fișierul frontend/index.html în browser pentru interfața grafică.
 
 ⚙️ Configurații
-Cheia Alpha Vantage este setată în fișierul app.py în variabila API_KEY.
+Cheia API Alpha Vantage este setată în fișierul app.py, în variabila API_KEY.
 
-Datele sunt salvate local în forex.db (SQLite).
+Datele sunt stocate local în fișierul forex.db (SQLite).
 
-Caching-ul este implementat pentru reducerea apelurilor la API.
+Caching-ul este implementat pentru a limita apelurile către API și pentru o performanță mai bună.
 
 🧠 Funcționalități
-Selecție pereche valutară (ex: EURUSD)
+Selectare pereche valutară (ex: EURUSD)
 
-Alegere interval: zilnic / săptămânal / lunar
+Alegere interval temporal: zilnic, săptămânal, lunar
 
-Configurare perioadă analiză + parametri indicatori (RSI, SMA, EMA)
+Configurare parametri pentru fiecare indicator tehnic
 
-Grafic tip candlestick + suprapunere indicatori
+Grafic interactiv candlestick + suprapunere indicatori
 
-Istoric ultimele 50 de analize
+Istoric cu ultimele 50 de analize
 
-Mod light/dark
+Suport pentru mod Light/Dark
 
-📋 TODO (în dezvoltare)
-Afișare semnale automate (BUY / SELL)
+📋 TODO – Funcționalități în dezvoltare
+Afișare automată semnale de tip BUY / SELL pe baza indicatorilor
 
-Strategie pe indicatori multipli
+Strategie combinată cu scor pe indicatori multipli
 
-Export istoric în CSV
+Export analize în format .CSV
 
 Autentificare utilizator (opțional)
