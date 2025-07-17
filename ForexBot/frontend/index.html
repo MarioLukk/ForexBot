@@ -46,15 +46,27 @@
 
   </style>
 </head>
-<body class="bg-slate-100 text-slate-900">
+<body class="bg-slate-100 text-slate-900 flex">
 
-<div class="flex justify-between items-center mb-6">
-  <button id="darkModeToggle" class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded">
+<aside class="w-64 min-h-screen bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-4 py-6 shadow-md">
+  <h2 class="text-xl font-bold mb-4">⚙️ Setări & Info</h2>
+
+  <button id="darkModeToggle" class="mb-4 w-full bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-2 rounded">
     Dark Mode
   </button>
-</div>
 
-  <div class="max-w-5xl mx-auto py-8 px-4">
+  <h3 class="font-semibold mt-6 mb-2">📊 Indicatori:</h3>
+  <ul class="text-sm space-y-2">
+    <li><strong>RSI</strong>: Măsoară supracumpărarea/supravânzarea (0–100)</li>
+    <li><strong>SMA</strong>: Media simplă pe N perioade</li>
+    <li><strong>EMA</strong>: Media exponențială, mai sensibilă</li>
+    <li><strong>MACD</strong>: Momentum, cu linie semnal și histogramă</li>
+    <li><strong>Bollinger Bands (BB)</strong>: Benzi de volatilitate</li>
+  </ul>
+</aside>
+
+
+  <main class="flex-1 max-w-5xl mx-auto py-8 px-4">
     <h1 class="text-3xl font-bold mb-6 text-blue-800 text-center">📈 ForexBot – Analiză Grafic</h1>
 
     <div class="flex flex-wrap gap-4 items-center mb-6 relative">
@@ -507,5 +519,6 @@ window.onload = () => {
 };
 
   </script>
+  </main>
 </body>
 </html>
